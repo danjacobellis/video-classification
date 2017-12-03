@@ -9,6 +9,7 @@ import subprocess
 from datetime import datetime, timedelta
 from string import capwords
 import shutil
+from time import time
 
 class Extractor():
     def __init__(self, weights=None, frames_per_video=40):
@@ -16,7 +17,7 @@ class Extractor():
         weights from our own training."""
 
         self.weights = weights  # so we can check elsewhere which model
-        self.frames_per_video = 40
+        self.frames_per_video = frames_per_video
         
         if weights is None:
             # Get model with pretrained weights.
@@ -43,10 +44,11 @@ class Extractor():
             self.model.output_layers = [self.model.layers[-1]]
             self.model.layers[-1].outbound_nodes = []
 
-    def extract_frame(self, image_path):
-        img = image.load_img(image_path, target_size=(299, 299))
-        x = image.img_to_array(img)
-        x = np.expand_dims(x, axis=0)
+    def extract_frames(self, frames):
+        x = np.zeros([len(frames), 299, 299, 3])
+        for i_img, img_path in enumerate(frames):
+            img = image.load_img(img_path, target_size=(299, 299))
+            x[i_img] = image.img_to_array(img)
         x = preprocess_input(x)
 
         # Get the prediction.
@@ -72,9 +74,13 @@ class Extractor():
         return duration
     
     def extract(self, video_file, frame_dir):
+        t0 = time()
+        timing = [0] * 4
         if not os.path.exists(frame_dir):
             os.makedirs(frame_dir)
+        t = time()
         duration = self.getLength(video_file)
+        timing[0] = t - time()
         frame_dest_name = frame_dir + os.sep + 'frame' + '-%03d.jpg'
         try:
         # EXTRACTING FRAMES HERE
@@ -84,7 +90,9 @@ class Extractor():
                 "-filter:v", 'fps=' + str(fps), 
                 "-vframes", str(self.frames_per_video), frame_dest_name
             ]
+            t = time()
             ret = subprocess.call(args)
+            timing[1] = time() - t
             if ret != 0:
                 print("Failed to extract frames from %s \n" % video_file)
         except Exception as e:
@@ -92,9 +100,19 @@ class Extractor():
             print(e)
         frames = glob.glob(frame_dir + os.sep + 'frame-*.jpg')
         sequence = []
-        for frame in frames:
-            features = self.extract_frame(frame)
-            sequence.append(features)
+        t = time()
+        sequence = self.extract_frames(frames)
+#         for frame in frames:
+#             features = self.extract_frame(frame)
+#             sequence.append(features)
+        timing[2] = time() - t
         shutil.rmtree(frame_dir)
-        return sequence
+        timing[3] = time() - t0
+        timing = {
+            'ffmpeg1':timing[0],
+            'ffmpeg2':timing[1],
+            'CNN':timing[2],
+            'total':timing[3]
+        }
+        return sequence, timing
         
