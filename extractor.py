@@ -12,12 +12,13 @@ import shutil
 from time import time
 
 class Extractor():
-    def __init__(self, weights=None, frames_per_video=40):
+    def __init__(self, weights=None, frames_per_video=40, batch_process = True):
         """Either load pretrained from imagenet, or load our saved
         weights from our own training."""
 
         self.weights = weights  # so we can check elsewhere which model
         self.frames_per_video = frames_per_video
+        self.batch_process = batch_process
         
         if weights is None:
             # Get model with pretrained weights.
@@ -45,15 +46,21 @@ class Extractor():
             self.model.layers[-1].outbound_nodes = []
 
     def extract_frames(self, frames):
-        x = np.zeros([len(frames), 299, 299, 3])
-        for i_img, img_path in enumerate(frames):
-            img = image.load_img(img_path, target_size=(299, 299))
-            x[i_img] = image.img_to_array(img)
-        x = preprocess_input(x)
-
-        # Get the prediction.
-        features = self.model.predict(x)
-
+        if self.batch_process:
+            x = np.zeros([len(frames), 299, 299, 3])
+            for i_img, img_path in enumerate(frames):
+                img = image.load_img(img_path, target_size=(299, 299))
+                x[i_img] = image.img_to_array(img)
+            x = preprocess_input(x)
+            features = self.model.predict(x)
+        else:           
+            features = np.zeros([len(frames),2048])
+            for i_img, img_path in enumerate(frames):
+                img = image.load_img(img_path, target_size=(299, 299))
+                x = image.img_to_array(img)
+                x = np.expand_dims(x, axis=0)
+                x = preprocess_input(x)
+                features[i_img,:] = self.model.predict(x)[0]
         return features
 
     def getLength(self, input_video):
