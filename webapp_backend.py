@@ -68,7 +68,7 @@ def pred():
     #extract features
     if 'feature_extractor' not in globals():
         global feature_extractor            
-        feature_extractor = Extractor(frames_per_video=fpv)        
+        feature_extractor = Extractor(frames_per_video=fpv, batch_process=False)        
     frame_dir = 'frames-' + str(fpv)
     sequence, timing = feature_extractor.extract(input_video,frame_dir)
     
