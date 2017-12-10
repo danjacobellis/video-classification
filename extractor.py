@@ -80,7 +80,7 @@ class Extractor():
             os.makedirs(frame_dir)
         t = time()
         duration = self.getLength(video_file)
-        timing[0] = t - time()
+        timing[0] = time() - t
         frame_dest_name = frame_dir + os.sep + 'frame' + '-%03d.jpg'
         try:
         # EXTRACTING FRAMES HERE
