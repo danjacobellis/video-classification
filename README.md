@@ -1,7 +1,9 @@
 # video-classification
 
-## Timing Benchmarks
+To start the web app server run the following command. This server requires ffmpeg installed.
 
-Initial benchmarks indicate extraction of feature vector from a video takes about 3 seconds. However, this may be heavily influenced by unknown sources of latency.
+`python2 webapp_backend.py`
 
-Preprocessing the UCF101 dataset with 10 frames per video takes about two hours, indicating that the real time requirement is about 0.5 seconds.
+Then, the web app can be used:
+
+http://sd-lstm.appspot.com
